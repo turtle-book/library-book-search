@@ -4,8 +4,12 @@ const morgan = require('morgan');
 const path = require('path');
 const session = require('express-session');
 const dotenv = require('dotenv');
+const cors = require('cors');
 
 dotenv.config();
+
+// 라우터 require
+const searchRouter = require('./routes/search');
 
 const { sequelize } = require('./models');
 
@@ -20,6 +24,12 @@ sequelize.sync({ force: false })
 	.catch((err) => {
 		console.error(err);
 	});
+
+// CORS
+app.use(cors());
+app.use(cors({
+	origin: `${process.env.CLIENT_URL}`
+}));
 
 // 미들웨어 셋팅
 app.use(morgan('dev'));
@@ -36,6 +46,9 @@ app.use(session({
 		secure: false,
 	},
 }));
+
+// 라우터 연결
+app.use('/search', searchRouter);
 
 // 404 Not Found 에러 캐치
 app.use((req, res, next) => {
