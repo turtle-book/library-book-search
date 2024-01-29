@@ -3,25 +3,25 @@ const Sequelize = require('sequelize');
 class Book extends Sequelize.Model {
   static initiate(sequelize) {
     Book.init({
-      reg_number: {
-        type: Sequelize.STRING(45),
+      regNumber: {
+        type: Sequelize.STRING(60),
         allowNull: false,
         unique: true,
         primaryKey: true,
       },
       author: {
-        type: Sequelize.STRING(45),
+        type: Sequelize.STRING(150),
         allowNull: false,
       },
       title: {
-        type: Sequelize.STRING(45),
+        type: Sequelize.STRING(240),
         allowNull: false,
       },
-      pub_year: {
+      pubYear: {
         type: Sequelize.INTEGER.UNSIGNED,
         allowNull: false,
       },
-      kdc_code: {
+      kdcCode: {
         type: Sequelize.FLOAT,
         allowNull: false,
       },

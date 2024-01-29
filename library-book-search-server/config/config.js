@@ -5,7 +5,7 @@ const development = {
   password: process.env.MYSQL_DEVELOPMENT_PASSWORD,
   database: process.env.MYSQL_DEVELOPMENT_DATABASE,
   host: process.env.MYSQL_DEVELOPMENT_HOST,
-  dialect: "mysql",
+  dialect: 'mysql',
 };
 
 const test = {
@@ -13,7 +13,7 @@ const test = {
   password: process.env.MYSQL_TEST_PASSWORD,
   database: process.env.MYSQL_TEST_DATABASE,
   host: process.env.MYSQL_TEST_HOST,
-  dialect: "mysql"
+  dialect: 'mysql',
 };
 
 const production = {
@@ -21,7 +21,7 @@ const production = {
   password: process.env.MYSQL_PRODUCTION_PASSWORD,
   database: process.env.MYSQL_PRODUCTION_DATABASE,
   host: process.env.MYSQL_PRODUCTION_HOST,
-  dialect: "mysql"
+  dialect: 'mysql',
 };
 
 module.exports = { development, test, production };
