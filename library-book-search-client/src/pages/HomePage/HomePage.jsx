@@ -1,27 +1,30 @@
 import axios from "axios";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useState } from "react";
 
+import axiosInstance from "../../services/axiosInstance";
 import { useAuth } from "../../contexts/AuthContext";
 
 function HomePage() {
   const { isLoggedIn, setIsLoggedIn } = useAuth();
   const [searchWord, setSearchWord] = useState("");
 
-  const navigate = useNavigate();
-
+  // 로그아웃 요청
   const handleLogout = async () => {
     try {
-      const response = await axios.get(
+      const response = await axiosInstance.get(
         `${import.meta.env.VITE_SERVER_URL}/auth/logout`,
-        { withCredentials: true },
       );
-      if (response.data.code === "LOGOUT SUCCESS") {
+      if (response.data.code === "LOGOUT_SUCCESS") {
         setIsLoggedIn(false);
-        window.location.href = "http://localhost:5173/";
+        window.location.href = `${import.meta.env.VITE_CLIENT_URL}/`;
       }
     } catch (error) {
-      console.error(error);
+      // 에러 원인이 토큰과 관련된 경우 
+      if (error.response.status === 403) {
+        alert(`${error.response.data.code}`);
+      }
+      console.error("로그아웃 요청 실패", error);
     }
   };
 
@@ -40,10 +43,10 @@ function HomePage() {
         params: { searchWord }
       });
       // 검색어를 포함하는 도서정보를 찾지 못한 경우
-      if (response.data.code === "SEARCH FAIL") {
+      if (response.data.code === "SEARCH_FAIL") {
         alert(response.data.message);
       // 검색어를 포함하는 도서정보를 찾은 경우
-      } else if (response.data.code === "SEARCH SUCCESS") {
+      } else if (response.data.code === "SEARCH_SUCCESS") {
         const books = response.data.data.bookData;
         for (const book of books) {
           // 테스트
@@ -53,7 +56,7 @@ function HomePage() {
       }
       setSearchWord("");
     } catch (error) {
-      console.error(error);
+      console.error("도서검색 요청 실패", error);
     }
   };
 

@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 
 import { useAuth } from "../../contexts/AuthContext";
 
+// 로그인 폼
 function LoginForm() {
   const { setIsLoggedIn } = useAuth();
   const [userId, setUserId] = useState("");
@@ -11,6 +12,7 @@ function LoginForm() {
 
   const navigate = useNavigate();
 
+  // 로그인 요청
   const handleSubmit = async (event) => {
     event.preventDefault();
 
@@ -20,18 +22,22 @@ function LoginForm() {
         { userId, password }, 
         { withCredentials: true },
       );
-      if (response.data.code === "LOGIN SUCCESS") {
+      // 로그인 성공
+      if (response.data.code === "LOGIN_SUCCESS") {
         setIsLoggedIn(true);
         navigate("/");
-      } else if (response.data.code === "LOGIN FAIL") {
+      // 로그인 실패: 가입되지 않은 계정, 비밀번호 불일치
+      } else if (response.data.code === "LOGIN_FAIL") {
         alert(`${response.data.message}`);
         setUserId("");
         setPassword("");
         navigate("/auth");
       }
-
     } catch (error) {
-      console.error(error);
+      if (error.response.status === 401) {
+        alert(`${error.response.data.code}`);
+      }
+      console.error("로그인 요청 실패", error);
     }
   };
 

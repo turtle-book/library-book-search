@@ -31,10 +31,10 @@ function JoinForm() {
         address,
       });
 
-      if (response.data.code === "JOIN SUCCESS") {
+      if (response.data.code === "JOIN_SUCCESS") {
         setIsLoginForm(true);
         alert(`${response.data.message}`);
-      } else if (response.data.code === "JOIN FAIL") {
+      } else if (response.data.code === "JOIN_FAIL") {
         alert(`${response.data.message}`);
       }
 
@@ -48,7 +48,7 @@ function JoinForm() {
       
       navigate("/auth");
     } catch (error) {
-      console.error("회원가입 실패:", error);
+      console.error("회원가입 요청 실패:", error);
     }
   };
 

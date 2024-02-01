@@ -20,13 +20,13 @@ exports.searchBooks = async (req, res, next) => {
     // 검색어를 포함하는 도서정보를 찾지 못한 경우
     if (bookData.length === 0) {
       return res.status(200).send({
-        code: 'SEARCH FAIL',
+        code: 'SEARCH_FAIL',
         message: '검색 결과가 없습니다.',
       });
     // 검색어를 포함하는 도서정보를 찾은 경우
     } else {
       return res.status(200).send({
-        code: 'SEARCH SUCCESS',
+        code: 'SEARCH_SUCCESS',
         data: {
           bookData: bookData,
         },
