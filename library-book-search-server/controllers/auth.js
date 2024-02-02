@@ -60,7 +60,7 @@ exports.login = (req, res, next) => {
         return next(loginError);
       }
 
-      // 이중로그인 방지 로직
+      // 중복로그인 방지 로직
       //
       //
 
@@ -151,7 +151,7 @@ exports.logout = async (req, res, next) => {
       // 리프레시 토큰 검증 실패(리프레시 토큰 만료 제외) 및 기타 에러
       } else {
         console.error(error);
-        next(error);
+        return next(error);
       }
     }
   }
@@ -239,7 +239,7 @@ exports.renewAccessToken = async (req, res, next) => {
         });
       } else {
         console.error(error);
-        next(error);
+        return next(error);
       }
     }
   } else {
@@ -247,4 +247,11 @@ exports.renewAccessToken = async (req, res, next) => {
       code: 'NO_REFRESH_TOKEN',
     });
   }
+};
+
+// 로그인 상태 체크
+exports.loginStatus = async (req, res) => {
+  return res.status(200).send({
+    code: 'IS_LOGGED_IN',
+  });
 };

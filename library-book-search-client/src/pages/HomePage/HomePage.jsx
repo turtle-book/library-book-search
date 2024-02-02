@@ -2,7 +2,6 @@ import axios from "axios";
 import { Link } from "react-router-dom";
 import { useState } from "react";
 
-import axiosInstance from "../../services/axiosInstance";
 import { useAuth } from "../../contexts/AuthContext";
 
 function HomePage() {
@@ -12,18 +11,15 @@ function HomePage() {
   // 로그아웃 요청
   const handleLogout = async () => {
     try {
-      const response = await axiosInstance.get(
+      const response = await axios.get(
         `${import.meta.env.VITE_SERVER_URL}/auth/logout`,
+        { withCredentials: true },
       );
       if (response.data.code === "LOGOUT_SUCCESS") {
         setIsLoggedIn(false);
         window.location.href = `${import.meta.env.VITE_CLIENT_URL}/`;
       }
     } catch (error) {
-      // 에러 원인이 토큰과 관련된 경우 
-      if (error.response.status === 403) {
-        alert(`${error.response.data.code}`);
-      }
       console.error("로그아웃 요청 실패", error);
     }
   };

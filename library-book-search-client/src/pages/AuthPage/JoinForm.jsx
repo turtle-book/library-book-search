@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 
 function JoinForm() {
-  const { isLoginForm, setIsLoginForm } = useAuth();
+  const { setIsLoginForm } = useAuth();
 
   const [userId, setUserId] = useState("");
   const [password, setPassword] = useState("");
