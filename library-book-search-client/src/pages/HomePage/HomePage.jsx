@@ -15,7 +15,7 @@ function HomePage() {
         `${import.meta.env.VITE_SERVER_URL}/auth/logout`,
         { withCredentials: true },
       );
-      if (response.data.code === "LOGOUT_SUCCESS") {
+      if (response.data.code === "LOGOUT_SUCCEEDED") {
         setIsLoggedIn(false);
         window.location.href = `${import.meta.env.VITE_CLIENT_URL}/`;
       }
@@ -39,10 +39,10 @@ function HomePage() {
         params: { searchWord }
       });
       // 검색어를 포함하는 도서정보를 찾지 못한 경우
-      if (response.data.code === "SEARCH_FAIL") {
+      if (response.data.code === "SEARCH_FAILED") {
         alert(response.data.message);
       // 검색어를 포함하는 도서정보를 찾은 경우
-      } else if (response.data.code === "SEARCH_SUCCESS") {
+      } else if (response.data.code === "SEARCH_SUCCEEDED") {
         const books = response.data.data.bookData;
         for (const book of books) {
           // 테스트

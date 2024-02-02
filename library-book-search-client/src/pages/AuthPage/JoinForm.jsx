@@ -31,10 +31,10 @@ function JoinForm() {
         address,
       });
 
-      if (response.data.code === "JOIN_SUCCESS") {
+      if (response.data.code === "JOIN_SUCCEEDED") {
         setIsLoginForm(true);
         alert(`${response.data.message}`);
-      } else if (response.data.code === "JOIN_FAIL") {
+      } else if (response.data.code === "JOIN_FAILED") {
         alert(`${response.data.message}`);
       }
 

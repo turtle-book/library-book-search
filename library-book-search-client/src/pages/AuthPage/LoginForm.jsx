@@ -23,11 +23,11 @@ function LoginForm() {
         { withCredentials: true },
       );
       // 로그인 성공
-      if (response.data.code === "LOGIN_SUCCESS") {
+      if (response.data.code === "LOGIN_SUCCEEDED") {
         setIsLoggedIn(true);
         navigate("/");
       // 로그인 실패: 가입되지 않은 계정, 비밀번호 불일치
-      } else if (response.data.code === "LOGIN_FAIL") {
+      } else if (response.data.code === "LOGIN_FAILED") {
         alert(`${response.data.message}`);
         setUserId("");
         setPassword("");
