@@ -1,7 +1,7 @@
 const express = require('express');
 
 const { isLoggedIn, isNotLoggedIn } = require('../middlewares');
-const { join, login, logout, renewAccessToken, loginStatus } = require('../controllers/auth');
+const { join, login, logout, reissueAccessToken, loginStatus } = require('../controllers/auth');
 
 const router = express.Router();
 
@@ -15,7 +15,7 @@ router.post('/login', isNotLoggedIn, login);
 router.get('/logout', logout);
 
 // POST /auth/refresh-token
-router.post('/refresh-token', renewAccessToken);
+router.post('/refresh-token', reissueAccessToken);
 
 // GET /auth/login-status
 router.get('/login-status', isLoggedIn, loginStatus);

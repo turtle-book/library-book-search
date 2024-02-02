@@ -13,7 +13,7 @@ exports.join = async (req, res, next) => {
     const exUser = await User.findOne({ where: { userId } });
     if (exUser) {
       return res.status(200).send({
-        code: 'JOIN_FAIL',
+        code: 'JOIN_FAILED',
         message: '이미 가입된 회원입니다.',
       });
     }
@@ -30,8 +30,8 @@ exports.join = async (req, res, next) => {
       address,
     });
     return res.status(201).send({
-      code: 'JOIN_SUCCESS',
-      message: '회원가입 성공! 로그인 해주세요.',
+      code: 'JOIN_SUCCEEDED',
+      message: '회원가입이 완료되었습니다. 로그인 해주세요.',
     });
   } catch (error) {
     console.error(error);
@@ -49,7 +49,7 @@ exports.login = (req, res, next) => {
     }
     if (!user) {
       return res.status(200).send({
-        code: 'LOGIN_FAIL',
+        code: 'LOGIN_FAILED',
         message: info.message,
       });
     }
@@ -108,7 +108,7 @@ exports.login = (req, res, next) => {
       });
 
       return res.status(200).send({
-        code: 'LOGIN_SUCCESS',
+        code: 'LOGIN_SUCCEEDED',
       });
     });
   })(req, res, next);
@@ -146,7 +146,7 @@ exports.logout = async (req, res, next) => {
       if (error instanceof jwt.TokenExpiredError) {
         console.error(error);
         return res.status(200).send({
-          code: 'LOGOUT_SUCCESS',
+          code: 'LOGOUT_SUCCEEDED',
         });
       // 리프레시 토큰 검증 실패(리프레시 토큰 만료 제외) 및 기타 에러
       } else {
@@ -166,12 +166,12 @@ exports.logout = async (req, res, next) => {
   });
 
   return res.status(200).send({
-    code: 'LOGOUT_SUCCESS',
+    code: 'LOGOUT_SUCCEEDED',
   });
 };
 
 // 액세스 토큰 재발급
-exports.renewAccessToken = async (req, res, next) => {
+exports.reissueAccessToken = async (req, res, next) => {
   // 리프레시 토큰 검증
   const refreshToken = req.cookies?.['refresh_jwt'];
   if (refreshToken) {
@@ -225,7 +225,7 @@ exports.renewAccessToken = async (req, res, next) => {
         await client.set(userId, newRefreshToken, 'EX', 5 * 24 * 3600);
 
         return res.status(200).send({
-          code: 'TOKEN_REISSUE_SUCCESS',
+          code: 'TOKEN_REISSUE_SUCCEEDED',
         });
       }
     } catch (error) {
