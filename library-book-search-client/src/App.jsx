@@ -1,20 +1,20 @@
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 
-import { AuthProvider } from "./contexts/AuthContext";
-import AuthPage from "./pages/AuthPage/AuthPage";
+import JoinPage from "./pages/JoinPage/JoinPage";
 import HomePage from "./pages/HomePage/HomePage";
+import Layout from "./layout/Layout";
+import LoginPage from "./pages/LoginPage/LoginPage";
 
 import "./App.css";
 
 function App() {
   return (
     <Router>
-      <AuthProvider>
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/auth" element={<AuthPage />} />
-        </Routes>
-      </AuthProvider>
+      <Routes>
+        <Route path="/" element={<Layout><HomePage /></Layout>} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/join" element={<JoinPage />} />
+      </Routes>
     </Router>
   );
 }

@@ -2,16 +2,16 @@ import axios from "axios";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { useAuth } from "../../contexts/AuthContext";
+import "./JoinPage.css";
 
-function JoinForm() {
-  const { setIsLoginForm } = useAuth();
-
-  const [userId, setUserId] = useState("");
+// 회원가입 폼
+function JoinPage() {
+  const [accountName, setAccountName] = useState("");
   const [password, setPassword] = useState("");
   const [realName, setRealName] = useState("");
   const [birthday, setBirthday] = useState("");
-  const [gender, setGender] = useState("");
+  const [gender, setGender] = useState("male");
+  const [email, setEmail] = useState("");
   const [mobileNumber, setMobileNumber] = useState("");
   const [address, setAddress] = useState("");
 
@@ -22,31 +22,32 @@ function JoinForm() {
 
     try {
       const response = await axios.post(`${import.meta.env.VITE_SERVER_URL}/auth/join`, {
-        userId, 
+        accountName, 
         password, 
         realName, 
         birthday, 
         gender, 
+        email,
         mobileNumber, 
         address,
       });
 
       if (response.data.code === "JOIN_SUCCEEDED") {
-        setIsLoginForm(true);
         alert(`${response.data.message}`);
       } else if (response.data.code === "JOIN_FAILED") {
         alert(`${response.data.message}`);
       }
 
-      setUserId("");
+      setAccountName("");
       setPassword("");
       setRealName("");
       setBirthday("");
-      setGender("");
+      setGender("male");
+      setEmail("");
       setMobileNumber("");
       setAddress("");
       
-      navigate("/auth");
+      navigate("/login");
     } catch (error) {
       console.error("회원가입 요청 실패:", error);
     }
@@ -56,16 +57,16 @@ function JoinForm() {
     <>
       <form onSubmit={handleSubmit}>
         <div>
-          <label htmlFor="userId">아이디:</label>
-          <input type="text" id="userId" value={userId} onChange={(e) => setUserId(e.target.value)} required />
+          <label htmlFor="account-name">아이디:</label>
+          <input type="text" id="account-name" value={accountName} onChange={(e) => setAccountName(e.target.value)} required />
         </div>
         <div>
           <label htmlFor="password">비밀번호:</label>
           <input type="password" id="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
         </div>
         <div>
-          <label htmlFor="realName">성명:</label>
-          <input type="text" id="realName" value={realName} onChange={(e) => setRealName(e.target.value)} required />
+          <label htmlFor="real-name">성명:</label>
+          <input type="text" id="real-name" value={realName} onChange={(e) => setRealName(e.target.value)} required />
         </div>
         <div>
           <label htmlFor="birthday">생년월일:</label>
@@ -79,8 +80,12 @@ function JoinForm() {
           </select>
         </div>
         <div>
-          <label htmlFor="mobileNumber">휴대폰번호:</label>
-          <input type="tel" id="mobileNumber" value={mobileNumber} onChange={(e) => setMobileNumber(e.target.value)} required />
+          <label htmlFor="email">이메일:</label>
+          <input type="email" id="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        </div>
+        <div>
+          <label htmlFor="mobile-number">휴대폰번호:</label>
+          <input type="tel" id="mobile-number" value={mobileNumber} onChange={(e) => setMobileNumber(e.target.value)} required />
         </div>
         <div>
           <label htmlFor="address">주소:</label>
@@ -92,4 +97,4 @@ function JoinForm() {
   );
 }
 
-export default JoinForm;
+export default JoinPage;

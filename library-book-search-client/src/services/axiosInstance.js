@@ -25,6 +25,7 @@ axiosInstance.interceptors.response.use(
         // 액세스 토큰 재발급 요청
         await axiosInstance.post(
           `${import.meta.env.VITE_SERVER_URL}/auth/refresh-token`,
+          { accountName: localStorage.getItem("loginId") },
         );
 
         // 원본 요청 재시도

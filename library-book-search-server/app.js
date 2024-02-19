@@ -56,6 +56,23 @@ app.use(passport.initialize());
 app.use('/auth', authRouter);
 app.use('/search', searchRouter);
 
+// Swagger 설정
+const swaggerUi = require('swagger-ui-express');
+const swaggerJsdoc = require('swagger-jsdoc');
+const swaggerOptions = {
+  swaggerDefinition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'Happy Library API',
+      version: '1.0.0',
+      description: 'Library Book Search API with Swagger',
+    },
+  },
+  apis: ['./routes/*.js'],
+};
+const swaggerDocs = swaggerJsdoc(swaggerOptions);
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
+
 // 404 Not Found 에러 캐치
 app.use((req, res, next) => {
 	const error = new Error(`${req.method} ${req.url} 라우터가 없습니다.`);

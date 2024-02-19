@@ -7,12 +7,12 @@ const User = require('../models/user');
 // 로컬 로그인 전략
 module.exports = () => {
   passport.use(new LocalStrategy({
-    usernameField: 'userId',
+    usernameField: 'accountName',
     passwordField: 'password',
     passReqToCallback: false,
-  }, async (userId, password, done) => {
+  }, async (accountName, password, done) => {
     try {
-      const exUser = await User.findOne({ where: { userId } });
+      const exUser = await User.findOne({ where: { accountName } });
       if (exUser) {
         // 비밀번호 일치 여부 확인
         const result = await bcrypt.compare(password, exUser.password);
