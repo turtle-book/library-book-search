@@ -1,6 +1,18 @@
+/* 모바일 */
 .content {
   width: 80vw;
-  height: 100vh;
-  margin: 0 auto;
-  padding-top: 24vh;
 }
+
+/* 태블릿 */
+@media (min-width: 768px) {}
+
+/* 데스크톱 */
+@media (min-width: 1024px) {
+  .content {
+    width: 80vw;
+    height: 100vh;
+    margin: 0 auto;
+    padding-top: 24vh;
+  }
+}
+

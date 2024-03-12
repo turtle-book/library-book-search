@@ -28,11 +28,7 @@ exports.isLoggedIn = async (req, res, next) => {
     }
 
     // 액세스 토큰 검증
-    jwt.verify(
-      accessToken, 
-      process.env.JWT_ACCESS_SECRET, 
-      { algorithms: ['HS256'] }
-    );
+    jwt.verify(accessToken, process.env.JWT_ACCESS_SECRET, { algorithms: ['HS256'] });
 
     next();
 
@@ -79,7 +75,7 @@ exports.isNotLoggedIn = (req, res, next) => {
       verifyToken(refreshToken, process.env.JWT_REFRESH_SECRET) === 'VALID'
     )
   ) {
-    return res.status(401).send({
+    return res.status(403).send({
       code: 'IS_LOGGED_IN',
     });
   // 그 외 경우 모두 로그아웃 상태로 처리

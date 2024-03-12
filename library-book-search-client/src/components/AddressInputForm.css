@@ -1,0 +1,16 @@
+.address-input-form {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.address-input-form-zonecode {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.address-input-form-find-address-modal {
+  width: 50vw;
+  margin: auto;
+}

@@ -1,0 +1,24 @@
+.profile-page {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 120vh;
+  margin: auto;
+}
+
+.user-info > div {
+  border: 1px solid gray;
+}
+
+.user-info-home-link {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 5vw;
+  margin: auto;
+}
+.user-info-home-link > img {
+  max-width: 100%;
+  height: auto;
+}

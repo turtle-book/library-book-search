@@ -18,9 +18,13 @@
   border: 0.2rem solid rgb(243, 243, 243);
   border-radius: 2rem;
 }
+.login-form > a {
+  width: 5vw;
+  margin: auto;
+}
 .login-form-home-link img {
-  height: 8vh;
-  margin-bottom: 2vh;
+  max-width: 100%;
+  height: auto;
 }
 .login-form input, .login-button {
   width: 30vw;

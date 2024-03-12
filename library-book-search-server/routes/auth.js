@@ -1,91 +1,53 @@
 const express = require('express');
 
 const { isLoggedIn, isNotLoggedIn } = require('../middlewares');
-const { join, login, logout, reissueAccessToken, test } = require('../controllers/auth');
+const { join, withdrawal } = require('../controllers/auth');
+const { login, logout, checkLogout, reissueAccessToken } = require('../controllers/auth');
+const { sendMobileAuthCode, verifyMobileAuthCode, getAccountName } = require('../controllers/auth');
+const { loadProfile, changePassword, changeMobileNumber, changeAddress } = require('../controllers/auth');
 
 const router = express.Router();
 
-/**
- * @swagger
- * /auth/join:
- *   post:
- *     tags: [Auth]
- *     summary: 회원가입
- *     description: 사용자가 제공한 정보로 회원가입을 진행
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               userId:
- *                 type: string
- *                 description: 사용자 아이디
- *                 example: user123
- *               password:
- *                 type: string
- *                 description: 비밀번호
- *                 format: password
- *                 example: "123456"
- *               realName:
- *                 type: string
- *                 description: 실제 이름
- *                 example: 홍길동
- *               birthday:
- *                 type: string
- *                 format: date
- *                 description: 생년월일(YYYY-MM-DD)
- *                 example: 1990-01-01
- *               gender:
- *                 type: string
- *                 description: 성별
- *                 example: 남성
- *                 enum: [남성, 여성]
- *               mobileNumber:
- *                 type: string
- *                 description: 휴대폰 번호
- *                 example: 010-1234-5678
- *     responses:
- *       201:
- *         description: 회원가입 성공
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 code:
- *                   type: string
- *                   example: JOIN_SUCCEEDED
- *                 message:
- *                   type: string
- *                   example: 회원가입이 완료되었습니다. 로그인 해주세요.
- *       200:
- *         description: 회원가입 실패(이미 가입된 계정)
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 code:
- *                   type: string
- *                   example: JOIN_FAILED
- *                 message:
- *                   type: string
- *                   example: 이미 가입된 회원입니다.
- *       500:
- *         description: 서버 에러
- */
 // POST /auth/join
 router.post('/join', isNotLoggedIn, join);
+
+// DELETE /auth/withdrawal
+router.delete('/withdrawal', isLoggedIn, withdrawal);
 
 // POST /auth/login
 router.post('/login', isNotLoggedIn, login);
 
-// GET /auth/logout
-router.get('/logout', logout);
+// POST /auth/logout
+router.post('/logout', logout);
+
+// GET /auth/check-logout
+router.get('/check-logout', isNotLoggedIn, checkLogout);
 
 // POST /auth/refresh-token
 router.post('/refresh-token', reissueAccessToken);
+
+// POST /auth/mobile-auth/code
+router.post('/mobile-auth/code', sendMobileAuthCode);
+
+// POST /auth/mobile-auth/verification
+router.post('/mobile-auth/verification', verifyMobileAuthCode);
+
+// GET /auth/recovery/account-name
+router.get('/recovery/account-name', getAccountName);
+
+// PUT /auth/recovery/password
+router.put('/recovery/password', changePassword);
+
+// GET /auth/profile
+router.get('/profile', isLoggedIn, loadProfile);
+
+// PATCH /auth/profile/password
+router.patch('/profile/password', isLoggedIn, changePassword);
+
+// PUT /auth/profile/address
+router.put('/profile/address', isLoggedIn, changeAddress);
+
+// PUT /auth/profile/mobile-number
+router.put('/profile/mobile-number', isLoggedIn, changeMobileNumber);
 
 module.exports = router;

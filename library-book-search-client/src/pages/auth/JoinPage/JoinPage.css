@@ -1,0 +1,48 @@
+.join-page {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+.join-form {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 40vw;
+  height: 70vh;
+  padding-top: 2vh;
+  padding-bottom: 2vh;
+  border: 0.2rem solid rgb(243, 243, 243);
+  border-radius: 2rem;
+}
+.join-form input {
+  width: 200px;
+}
+.join-form > div {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 30vw;
+  margin: 1px;
+  border: 1px solid black;
+}
+.join-form > div > div {
+  display: flex;
+}
+
+.join-form-gender-option, .join-form-gender-option-selected {
+  padding: 10px 20px; 
+  border-radius: 5px;
+  cursor: pointer;
+}
+.join-form-gender-option {
+  color: gray;
+  border: 1px solid gray;
+}
+.join-form-gender-option.selected {
+  color: green;
+  border: 1px solid green;
+}
