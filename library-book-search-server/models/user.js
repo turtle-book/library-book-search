@@ -15,12 +15,12 @@ class User extends Sequelize.Model {
         comment: '비밀번호',
       },
       realName: {
-        type: Sequelize.STRING(20),
+        type: Sequelize.STRING(30),
         allowNull: false,
         comment: '사용자 실명',
       },
       birthday: {
-        type: Sequelize.STRING(20),
+        type: Sequelize.STRING(30),
         allowNull: false,
         comment: '생년월일',
       },
@@ -30,7 +30,7 @@ class User extends Sequelize.Model {
         comment: '성별',
       },
       zonecode: {
-        type: Sequelize.STRING(20),
+        type: Sequelize.STRING(30),
         allowNull: false,
         comment: '우편번호'
       },
@@ -45,10 +45,10 @@ class User extends Sequelize.Model {
         comment: '상세 주소',
       },
       mobileNumber: {
-        type: Sequelize.STRING(20),
+        type: Sequelize.STRING(30),
         allowNull: false,
         unique: true,
-        comment: '휴대전화 번호',
+        comment: '휴대전화번호',
       },
       isAdmin: {
         type: Sequelize.BOOLEAN,

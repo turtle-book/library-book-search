@@ -3,22 +3,33 @@ import DaumPostcodeEmbed from "react-daum-postcode";
 import Modal from "react-modal";
 import { useDispatch, useSelector } from "react-redux";
 
-import { setZonecode, setMainAddress, setDetailAddress } from "../app/slice/addressDataSlice"
+import { openAlertModal } from "../app/slices/alertSlice";
+import { setZonecode, setMainAddress, setDetailAddress } from "../app/slices/userAddressSlice"
 import axiosInstance from "../services/axiosInstance";
 
 import "./AddressInputForm.css";
 
+/**
+ * AddressInputForm 컴포넌트
+ * 
+ * 주소 입력 폼 컴포넌트로,
+ * isEditableType prop이 true인 경우 주소 수정 기능이 활성화 되며(내 정보 페이지에서 주소 변경을 위해 사용),
+ * 기본값인 false인 경우 단순히 주소 입력 폼만 렌더링(회원가입 폼에 사용)
+ * 
+ * @param {Object} props 컴포넌트에 전달되는 props
+ * @param {boolean} props.isEditableType 수정 모드 옵션 boolean 값(true인 경우 활성화)
+ */
 function AddressInputForm({ isEditableType=false }) {
+  // 전역 상태 관리
+  const zonecode = useSelector((state) => state.userAddress.zonecode);
+  const mainAddress = useSelector((state) => state.userAddress.mainAddress);
+  const detailAddress = useSelector((state) => state.userAddress.detailAddress);
+  const dispatch = useDispatch();
+
   // 로컬 상태 관리
   const [isAddressSearchModalOpen, setIsAddressSearchModalOpen] = useState(false);
   const [isEditingAddress, setIsEditingAddress] = useState(false);
   const [originalAddressData, setOriginalAddressData] = useState({});
-
-  // 전역 상태 관리
-  const zonecode = useSelector((state) => state.addressData.zonecode);
-  const mainAddress = useSelector((state) => state.addressData.mainAddress);
-  const detailAddress = useSelector((state) => state.addressData.detailAddress);
-  const dispatch = useDispatch();
 
   // 주소 찾기 모달 오픈 핸들러
   const handleOpenAddressSearchModal = () => {
@@ -55,9 +66,9 @@ function AddressInputForm({ isEditableType=false }) {
     setIsAddressSearchModalOpen(false);
   };
 
-  // 주소 수정 버튼 클릭 핸들러(주소 수정 모드로 전환)
-  const handleClickAddressEditButton = () => {
-    // 기존 주소정보 임시저장
+  // 주소 수정 모드 전환 핸들러(주소 수정 버튼 클릭 시 실행)
+  const handleEnterAddressEdit = () => {
+    // 기존 주소 정보 임시저장
     setOriginalAddressData({ 
       zonecode, 
       mainAddress, 
@@ -67,17 +78,21 @@ function AddressInputForm({ isEditableType=false }) {
     setIsEditingAddress(true);
   };
 
-  // 주소 수정 확인 버튼 클릭 핸들러(주소 수정 완료)
-  const handleClickAddressEditConfirm = async () => {
-    if (!detailAddress) {
-      alert("상세 주소를 입력해주세요.");
+  // 주소 변경 요청 핸들러(주소 수정 확인 버튼 클릭 시 실행)
+  const handleRequestAddressChange = async () => {
+    // 유효성 검사
+    if (!zonecode.trim() || !mainAddress.trim() || !detailAddress.trim()) {
+      dispatch(openAlertModal({
+        modalTitle: "주소 변경 제출 불가",
+        modalContent: "주소를 입력해주세요.",
+      }));
       return;
     }
 
     try {
       const accountName = sessionStorage.getItem("loginId");
 
-      // 주소 변경 요청
+      // 사용자 주소 정보 변경 API 요청
       const response = await axiosInstance.put(`${import.meta.env.VITE_SERVER_URL}/auth/profile/address`, {
         accountName,
         newZonecode: zonecode,
@@ -85,19 +100,19 @@ function AddressInputForm({ isEditableType=false }) {
         newDetailAddress: detailAddress,
       });
 
+      // 주소 변경 성공 시, 임시저장된 기존 주소 정보 삭제 및 수정 모드 비활성화
       if (response.data.code === "ADDRESS_UPDATED") {
-        // 임시저장된 기존 주소정보 삭제
-        setOriginalAddressData({});
-
+        setOriginalAddressData({}); // 임시저장된 기존 주소 정보 삭제
         setIsEditingAddress(false);
       }
     } catch (error) {
-      console.error("주소 변경 요청 실패", error);
+      console.log("주소 변경 요청 실패");
+      console.error(error);
     }
   };
 
-  // 주소 수정 취소 버튼 클릭 핸들러(주소 수정 취소)
-  const handleClickAddressEditCancel = () => {
+  // 주소 수정 취소 핸들러(주소 수정 취소 버튼 클릭 시 실행)
+  const handleCancelAddressEdit = () => {
     // 기존 주소 정보 복구
     const { zonecode, mainAddress, detailAddress } = originalAddressData;
     dispatch(setZonecode(zonecode));
@@ -123,6 +138,14 @@ function AddressInputForm({ isEditableType=false }) {
           </div>
         )}
       </div>
+      <Modal 
+        className="address-search-modal"
+        isOpen={isAddressSearchModalOpen}
+        onRequestClose={handleCloseAddressSearchModal}
+        contentLabel="주소 찾기 모달"
+      >
+        <DaumPostcodeEmbed onComplete={handleCompleteAddressSearch} />
+      </Modal>
       <div className="address-input-form-main-address">
         <input 
           type="text" 
@@ -132,37 +155,29 @@ function AddressInputForm({ isEditableType=false }) {
           disabled={true}
         />
       </div>
-      <Modal 
-        isOpen={isAddressSearchModalOpen}
-        onRequestClose={handleCloseAddressSearchModal}
-        contentLabel="주소 찾기 모달"
-        className="address-search-modal"
-      >
-        <DaumPostcodeEmbed onComplete={handleCompleteAddressSearch} />
-      </Modal>
       <div className="address-input-form-detail-address">
         <input 
           type="text" 
           value={detailAddress} 
           placeholder="상세 주소" 
-          onChange={e => dispatch(setDetailAddress(e.target.value))} 
           required 
           disabled={isEditableType && !isEditingAddress} 
+          onChange={e => dispatch(setDetailAddress(e.target.value))} 
         />
       </div>
       {isEditableType && (
         isEditingAddress ? (
           <div>
-            <div onClick={handleClickAddressEditConfirm}>
+            <div onClick={handleRequestAddressChange}>
               확인
             </div>
-            <div onClick={handleClickAddressEditCancel}>
+            <div onClick={handleCancelAddressEdit}>
               취소
             </div>
           </div>
         ) : (
           <div>
-            <div onClick={handleClickAddressEditButton}>
+            <div onClick={handleEnterAddressEdit}>
               수정
             </div>
           </div>

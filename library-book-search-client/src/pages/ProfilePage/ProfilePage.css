@@ -1,0 +1,60 @@
+@media (max-width: 1024px) {
+  .profile-page {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    margin: auto;
+  }
+  
+  .user-info > div {
+    border: 1px solid gray;
+  }
+  
+  .user-info-home-link {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 5vw;
+    margin: auto;
+  }
+  .user-info-home-link > img {
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+/* 화면 너비 1024px 초과 */
+.profile-page {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  margin: auto;
+}
+
+.user-info > div {
+  border: 1px solid gray;
+}
+
+.user-info-home-link {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 5vw;
+  margin: auto;
+}
+.user-info-home-link > img {
+  max-width: 100%;
+  height: auto;
+}

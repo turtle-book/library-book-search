@@ -1,10 +1,10 @@
 const express = require('express');
 
-const { isLoggedIn, isNotLoggedIn } = require('../middlewares');
 const { join, withdrawal } = require('../controllers/auth');
-const { login, logout, checkLogout, reissueAccessToken } = require('../controllers/auth');
-const { sendMobileAuthCode, verifyMobileAuthCode, getAccountName } = require('../controllers/auth');
+const { login, logout, checkLogin, reissueAccessToken } = require('../controllers/auth');
+const { sendMobileAuthCode, verifyMobileAuthCode, findAccountName } = require('../controllers/auth');
 const { loadProfile, changePassword, changeMobileNumber, changeAddress } = require('../controllers/auth');
+const { isLoggedIn, isNotLoggedIn } = require('../middlewares');
 
 const router = express.Router();
 
@@ -20,8 +20,8 @@ router.post('/login', isNotLoggedIn, login);
 // POST /auth/logout
 router.post('/logout', logout);
 
-// GET /auth/check-logout
-router.get('/check-logout', isNotLoggedIn, checkLogout);
+// GET /auth/check-login
+router.get('/check-login', isLoggedIn, checkLogin);
 
 // POST /auth/refresh-token
 router.post('/refresh-token', reissueAccessToken);
@@ -33,7 +33,7 @@ router.post('/mobile-auth/code', sendMobileAuthCode);
 router.post('/mobile-auth/verification', verifyMobileAuthCode);
 
 // GET /auth/recovery/account-name
-router.get('/recovery/account-name', getAccountName);
+router.get('/recovery/account-name', findAccountName);
 
 // PUT /auth/recovery/password
 router.put('/recovery/password', changePassword);

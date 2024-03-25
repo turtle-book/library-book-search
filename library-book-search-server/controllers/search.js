@@ -9,8 +9,8 @@ exports.searchBooks = async (req, res, next) => {
   const whereClause = {};
   const likeCondition = { [Op.like]: `%${bookSearchTerm}%` };
 
-  if (bookSearchType === "search-title") whereClause.title = likeCondition;
-  if (bookSearchType === "search-author") whereClause.author = likeCondition;
+  if (bookSearchType === 'book-title-search') whereClause.title = likeCondition;
+  if (bookSearchType === 'book-author-search') whereClause.author = likeCondition;
 
   // 도서명이나 저자명에 검색어를 포함하는 모든 도서를 조회
   try {
@@ -30,6 +30,8 @@ exports.searchBooks = async (req, res, next) => {
       });
     }
   } catch (error) {
+    console.log('도서 정보 검색 실패');
+    console.log('MySQL(시퀄라이즈) 관련 에러 발생');
     console.error(error);
     return next(error);
   }

@@ -1,0 +1,54 @@
+/* 모달 오버레이(배경) 스타일 */
+.ReactModal__Overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: rgba(0, 0, 0, 0.75);
+}
+
+/* 모달 포커스 테두리 스타일 무시 */
+.ReactModal__Content:focus {
+  outline: none;
+}
+
+/* 모달 본체 스타일 */
+.alert-modal {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 400px;
+  height: 120px;
+  padding: 30px;
+  border: 1px solid rgb(130, 130, 130);
+  border-radius: 10px;
+  background: white;
+  overflow: hidden;
+}
+
+/* 모달 내용 스타일 */
+.alert-modal-content {
+  height: 60px;
+  text-align: center;
+  white-space: pre-wrap;
+}
+
+/* "확인" 버튼 스타일 */
+.alert-modal-button {
+  width: 40px;
+  height: 30px;
+  margin-top: 30px;
+  padding: 6px 16px;
+  color: white;
+  text-align: center;
+  border: none;
+  border-radius: 5px;
+  background-color: rgb(50, 150, 100);
+  cursor: pointer;
+}

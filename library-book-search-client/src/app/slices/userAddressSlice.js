@@ -6,8 +6,8 @@ const initialState = {
   detailAddress: "",
 };
 
-const addressDataSlice = createSlice({
-  name: "addressData",
+const userAddressSlice = createSlice({
+  name: "userAddress",
   initialState,
   reducers: {
     setZonecode: (state, action) => {
@@ -27,6 +27,6 @@ const addressDataSlice = createSlice({
   },
 });
 
-export const { setZonecode, setMainAddress, setDetailAddress, resetAddressData } = addressDataSlice.actions;
+export const { setZonecode, setMainAddress, setDetailAddress, resetAddressData } = userAddressSlice.actions;
 
-export default addressDataSlice.reducer;
+export default userAddressSlice.reducer;

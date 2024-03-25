@@ -1,11 +1,13 @@
-const express = require('express');
-const morgan = require('morgan');
-const path = require('path');
 const cookieParser = require('cookie-parser');
-const session = require('express-session');
-const dotenv = require('dotenv');
 const cors = require('cors');
+const dotenv = require('dotenv');
+const express = require('express');
+const session = require('express-session');
+const morgan = require('morgan');
 const passport = require('passport');
+const path = require('path');
+const swaggerUi = require('swagger-ui-express');
+const YAML = require('yamljs');
 
 dotenv.config();
 
@@ -57,21 +59,8 @@ app.use('/auth', authRouter);
 app.use('/search', searchRouter);
 
 // Swagger 설정
-const swaggerUi = require('swagger-ui-express');
-const swaggerJsdoc = require('swagger-jsdoc');
-const swaggerOptions = {
-  swaggerDefinition: {
-    openapi: '3.0.0',
-    info: {
-      title: 'Happy Library API',
-      version: '1.0.0',
-      description: 'Library Book Search API with Swagger',
-    },
-  },
-  apis: ['./routes/*.js'],
-};
-const swaggerDocs = swaggerJsdoc(swaggerOptions);
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
+const swaggerDocument = YAML.load('./docs/swagger.yaml');
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // 404 Not Found 에러 캐치
 app.use((req, res, next) => {
@@ -86,8 +75,8 @@ app.use((err, req, res, next) => {
 
   res.status(err.status || 500).send({
     error: {
+			status: err.status || 500, 
       message: err.message,
-      status: err.status || 500,
     }
   });
 });

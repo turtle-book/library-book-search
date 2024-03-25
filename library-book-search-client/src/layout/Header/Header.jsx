@@ -1,16 +1,28 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
+import { useDispatch } from "react-redux";
 import { Link } from "react-router-dom";
+
+import { openAlertModal } from "../../app/slices/alertSlice";
+import { setIsAuthenticated } from "../../app/slices/authSlice";
 
 import "./Hearder.css";
 
+/**
+ * Header 컴포넌트
+ * 
+ * 레이아웃의 상단부
+ * 로그인 상태(isLoggedIn)를 기준으로 구분하여 렌더링
+ */
 function Header() {
+  const dispatch = useDispatch();
+
   // 로컬 상태 관리
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [bookSearchType, setBookSearchType] = useState("search-title");
+  const [bookSearchType, setBookSearchType] = useState("book-title-search");
   const [bookSearchTerm, setBookSearchTerm] = useState("");
-  
-  // 마운트 이펙트: 로그인 상태 확인
+
+  // 마운트 이펙트: 세션스토리지에 저장된 사용자 아이디를 기준으로 로그인 상태 저장
   useEffect(() => {
     const loginId = sessionStorage.getItem("loginId");
     setIsLoggedIn(!!loginId);
@@ -19,29 +31,35 @@ function Header() {
   // 로그아웃 요청 핸들러
   const handleRequestLogout = async () => {
     try {
-      // 로그아웃 요청
+      // 로그아웃 API 요청
       const response = await axios.post(
         `${import.meta.env.VITE_SERVER_URL}/auth/logout`,
-        { accountName: sessionStorage.getItem("loginId") }, 
+        {}, 
         { withCredentials: true }
       );
 
       // 로그아웃 성공
       if (response.data.code === "LOGOUT_SUCCEEDED") {
+        dispatch(setIsAuthenticated(false));
         sessionStorage.removeItem("loginId");
         window.location.href = `${import.meta.env.VITE_CLIENT_URL}/`;
       }
-
     } catch (error) {
-      console.error("로그아웃 요청 실패", error);
+      console.log("로그아웃 요청 실패");
+      console.error(error);
     }
   };
   
   // 도서 검색 핸들러
-  const handleSearchBook = async () => {
-    // 검색어를 입력하지 않은 경우(공백 입력 포함)
-    if (bookSearchTerm.trim() === "") {
-      alert("검색어를 입력하세요.");
+  const handleSearchBook = async (e) => {
+    e.preventDefault();
+
+    // 검색어 유효성 검사
+    if (!bookSearchTerm.trim()) {
+      dispatch(openAlertModal({
+        modalTitle: "도서 검색 불가",
+        modalContent: "검색어를 입력하세요.",
+      }));
       setBookSearchTerm("");
       return;
     }
@@ -60,7 +78,10 @@ function Header() {
 
       // 검색어를 포함하는 도서 데이터를 찾지 못한 경우
       if (response.data.code === "SEARCH_FAILED") {
-        alert(response.data.message);
+        dispatch(openAlertModal({
+          modalTitle: "도서 정보 조회 실패",
+          modalContent: response.data.message,
+        }));
       // 검색어를 포함하는 도서 데이터를 찾은 경우
       } else if (response.data.code === "SEARCH_SUCCEEDED") {
         const books = response.data.bookData;
@@ -70,11 +91,10 @@ function Header() {
           console.log("저자: ", book.author);
         }
       }
-
       setBookSearchTerm("");
-
     } catch (error) {
-      console.error("도서 검색 요청 실패", error);
+      console.log("도서 검색 요청 실패");
+      console.error(error);
     }
   };
 
@@ -83,7 +103,7 @@ function Header() {
       <div className="auth-bar">
         {isLoggedIn ? (
           <div className="auth-link">
-            <div onClick={handleRequestLogout} className="auth-logout">로그아웃</div>
+            <div className="auth-logout" onClick={handleRequestLogout}>로그아웃</div>
             <Link to="/auth/profile" className="auth-profile-link">회원정보</Link>
           </div>
         ) : (
@@ -93,43 +113,55 @@ function Header() {
           </div>
         )}
       </div>
-      <div className="search-bar">
+      <div className="book-search-bar">
         <a 
           href="/"
-          className="home-link"
+          className="book-search-bar-home-link"
         >
           <img src="/logo.png" />
         </a>
-        <div className="search-container">
+        <form className="book-search-container" onSubmit={handleSearchBook}>
           <input 
+            className="book-search-custom-radio"
             type="radio" 
-            id="search-title" 
-            name="searchType" 
-            value="search-title" 
-            checked={bookSearchType === "search-title"} 
+            id="book-title-search" 
+            name="bookSearchType" 
+            value="book-title-search" 
+            checked={bookSearchType === "book-title-search"} 
             onChange={(e) => setBookSearchType(e.target.value)} 
           />
-          <label htmlFor="search-title">도서명</label>
+          <label 
+            className="book-search-label" 
+            htmlFor="book-title-search"
+          >
+            도서명
+          </label>
           <input 
+            className="book-search-custom-radio"
             type="radio" 
-            id="search-author" 
-            name="searchType" 
-            value="search-author"
-            checked={bookSearchType === "search-author"}
+            id="book-author-search" 
+            name="bookSearchType" 
+            value="book-author-search" 
+            checked={bookSearchType === "book-author-search"}
             onChange={(e) => setBookSearchType(e.target.value)} 
           />
-          <label htmlFor="search-author">저자명</label>
+          <label 
+            className="book-search-label" 
+            htmlFor="book-author-search"
+          >
+            저자명
+          </label>
           <input 
             type="text"
-            id="search-input"
+            className="book-search-input"
             value={bookSearchTerm}
+            placeholder="도서명 또는 저자명 검색" 
             onChange={(e) => setBookSearchTerm(e.target.value)}
-            placeholder="도서명 또는 저자명 검색"
           />
-          <div id="search-button" onClick={handleSearchBook} >
+          <button className="book-search-button">
             <img src="search-icon.png" />
-          </div>
-        </div>
+          </button>
+        </form>
         <div className="real-time-search">
           <img src="mypage.png"/>
         </div>

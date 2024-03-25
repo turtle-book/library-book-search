@@ -1,26 +1,34 @@
-import axios from "axios";
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 
-import { resetMobileAuthData } from "../../../app/slice/mobileAuthDataSlice";
-import axiosInstance from "../../../services/axiosInstance";
+import { openAlertModal } from "../../app/slices/alertSlice";
+import { resetMobileAuthData } from "../../app/slices/mobileAuthSlice";
+import axiosInstance from "../../services/axiosInstance";
 
 import "./WithdrawalPage.css";
 
+/**
+ * WithdrawalPage 컴포넌트
+ * 
+ * 회원탈퇴 페이지 렌더링
+ */
 function WithdrawalPage() {
   const navigate = useNavigate();
 
   // 전역 상태 관리
-  const isMobileAuthCompleted = useSelector((state) => state.mobileAuthData.isMobileAuthCompleted);
+  const isMobileAuthCompleted = useSelector((state) => state.mobileAuth.isMobileAuthCompleted);
   const dispatch = useDispatch();
 
   // 마운트 이펙트: 인증 미완료시 회원탈퇴 불가
   useEffect(() => {
     // 인증되지 않은 경우 프로필 페이지로 이동
     if (!isMobileAuthCompleted) {
-      navigate("/auth/profile");
-      return;
+      dispatch(openAlertModal({
+        modalTitle: "접근 불가",
+        modalContent: "인증되지 않은 사용자는 접근할 수 없습니다.",
+        modalNavigatePath: "/auth/profile",
+      }));
     }
   }, []);
 
@@ -31,12 +39,12 @@ function WithdrawalPage() {
     };
   }, []);
 
-  // 회원탈퇴 진행 요청 핸들러
+  // 회원탈퇴 요청 핸들러
   const handleRequestWithdrawal = async () => {
     const accountName = sessionStorage.getItem("loginId");
 
     try {
-      // 회원탈퇴 요청
+      // 회원탈퇴 API 요청
       const response = await axiosInstance.delete(`${import.meta.env.VITE_SERVER_URL}/auth/withdrawal`, {
         params: {
           accountName,
@@ -45,15 +53,17 @@ function WithdrawalPage() {
 
       // 회원탈퇴 성공 시
       if (response.data.code = "WITHDRAWAL SUCCEEDED") {
-        alert("회원탈퇴가 정상적으로 처리되었습니다.");
-
+        dispatch(openAlertModal({
+          modalTitle: "회원탈퇴 성공",
+          modalContent: "회원탈퇴가 정상적으로 처리되었습니다.",
+          modalReloadURL: "/",
+        }));
         dispatch(resetMobileAuthData());
         sessionStorage.removeItem("loginId");
-        
-        window.location.href = `${import.meta.env.VITE_CLIENT_URL}/`;
       }
     } catch (error) {
-      console.error("회원탈퇴 요청 실패", error);
+      console.log("회원탈퇴 요청 실패");
+      console.error(error);
     }
   };
   

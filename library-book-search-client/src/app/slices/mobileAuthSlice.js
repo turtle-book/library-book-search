@@ -10,8 +10,8 @@ const initialState = {
   isMobileAuthFieldsDisabled: false,
 };
 
-const mobileAuthDataSlice = createSlice({
-  name: "mobileAuthData",
+const mobileAuthSlice = createSlice({
+  name: "mobileAuth",
   initialState,
   reducers: {
     setAccountNameForMobileAuth: (state, action) => {
@@ -47,10 +47,10 @@ const mobileAuthDataSlice = createSlice({
   },
 });
 
-export const { setAccountNameForMobileAuth, setRealNameForMobileAuth } = mobileAuthDataSlice.actions;
-export const { setMobileNumber, setMobileAuthCode } = mobileAuthDataSlice.actions;
-export const { setIsMobileAuthCodeRequested, setIsMobileAuthCompleted } = mobileAuthDataSlice.actions;
-export const { setIsMobileAuthFieldsDisabled } = mobileAuthDataSlice.actions;
-export const { resetMobileAuthData } = mobileAuthDataSlice.actions;
+export const { setAccountNameForMobileAuth, setRealNameForMobileAuth } = mobileAuthSlice.actions;
+export const { setMobileNumber, setMobileAuthCode } = mobileAuthSlice.actions;
+export const { setIsMobileAuthCodeRequested, setIsMobileAuthCompleted } = mobileAuthSlice.actions;
+export const { setIsMobileAuthFieldsDisabled } = mobileAuthSlice.actions;
+export const { resetMobileAuthData } = mobileAuthSlice.actions;
 
-export default mobileAuthDataSlice.reducer;
+export default mobileAuthSlice.reducer;

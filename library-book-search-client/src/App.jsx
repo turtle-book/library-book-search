@@ -1,71 +1,130 @@
-import axios from "axios";
 import { useEffect } from "react";
-import { Provider } from "react-redux";
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom"; 
+import { useDispatch, useSelector } from "react-redux";
+import { Route, Routes, useLocation } from "react-router-dom";
 
+import { setIsAuthenticated } from "./app/slices/authSlice";
+import AlertModal from "./components/AlertModal";
 import Layout from "./layout/Layout";
-import JoinPage from "./pages/auth/JoinPage/JoinPage";
-import LoginPage from "./pages/auth/LoginPage/LoginPage";
-import MobileAuthPage from "./pages/auth/MobileAuthPage/MobileAuthPage";
-import ProfilePage from "./pages/auth/ProfilePage/ProfilePage";
-import RecoveryAccountNamePage from "./pages/auth/RecoveryPages/RecoveryAccountNamePage";
-import RecoveryPasswordPage from "./pages/auth/RecoveryPages/RecoveryPasswordPage";
-import WithdrawalPage from "./pages/auth/WithdrawalPage/WithdrawalPage";
+import JoinPage from "./pages/JoinPage/JoinPage";
+import LoginPage from "./pages/LoginPage/LoginPage";
+import MobileAuthPage from "./pages/MobileAuthPage/MobileAuthPage";
+import PasswordChangePage from "./pages/PasswordChangePage/PasswordChangePage";
+import ProfilePage from "./pages/ProfilePage/ProfilePage";
+import AccountNameRecoveryPage from "./pages/RecoveryPages/AccountNameRecoveryPage";
+import PasswordRecoveryPage from "./pages/RecoveryPages/PasswordRecoveryPage";
+import WithdrawalPage from "./pages/WithdrawalPage/WithdrawalPage";
 import HomePage from "./pages/HomePage/HomePage";
-import store from "../src/store";
+import PrivateRoute from "./routes/PrivateRoute";
+import axiosInstance from "./services/axiosInstance";
 
 import "./App.css";
 
+/**
+ * App 컴포넌트
+ */
 function App() {
-  // 마운트 이펙트: 세션스토리지에 사용자 정보가 없는 경우 로그아웃 여부 확인 요청(애플리케이션 최초 로드 시에만 실행)
+  const location = useLocation();
+
+  // 전역 상태 관리
+  const isAuthenticated = useSelector((state) => state.auth.isAuthenticated); 
+  const dispatch = useDispatch();
+
+  // 업데이트 이펙트: 최초 로드 시 또는 location 변경 시 로그인 여부 확인
   useEffect(() => {
-    const checkLogout = async () => {
+    const checkLogin = async () => {
       const accountName = sessionStorage.getItem("loginId");
+      // 세션스토리지에 사용자 아이디가 저장되어 있지 않은 경우
       if (!accountName) {
         try {
-          // 로그아웃 여부 확인 요청
-          await axios.get(`${import.meta.env.VITE_SERVER_URL}/auth/check-logout`, {
-            withCredentials: true,
-          });
+          // 로그인 여부 확인 API 요청
+          const response = await axiosInstance.get(`${import.meta.env.VITE_SERVER_URL}/auth/check-login`);
+          // 로그인 상태로 인정된 경우
+          if (response.data.code === 'IS_LOGGED_IN') {
+            console.log("로그인 상태");
+            const { accountName } = response.data.accountName;
+            dispatch(setIsAuthenticated(true));
+            sessionStorage.setItem("loginId", accountName);
+          }
         } catch (error) {
-          // 토큰 등 서버에 아직 로그인 데이터가 남은 경우 로그아웃 요청
-          if (error.response.data.code === "IS_LOGGED_IN") {
-            try {
-              await axios.post(
-                `${import.meta.env.VITE_SERVER_URL}/auth/logout`, 
-                { accountName }, 
-                { withCredentials: true } 
-              );
-            } catch (logoutError) {
-              console.error("로그아웃 요청 실패", logoutError);
-            }
+          if (error.response.status === 403) {
+            console.log(error.response.data.code);
+            console.log("로그아웃 상태");
+            dispatch(setIsAuthenticated(false));
+          // 서버측 에러
           } else {
-            console.error("로그아웃 여부 확인 요청 실패", error);
+            console.log("로그인 여부 확인 중 에러 발생");
+            console.error(error);
           }
         }
+      // 세션스토리지에 사용자 아이디가 저장되어 있는 경우
+      } else {
+        console.log("로그인 상태");
+        dispatch(setIsAuthenticated(true));
       }
     };
 
-    checkLogout();
-  }, []);
+    checkLogin();
+  }, [location]);
 
   return (
-    <Provider store={store}>
-      <Router>
-        <Routes>
-          <Route path="/" element={<Layout><HomePage /></Layout>} />
-          <Route path="/auth/login" element={<LoginPage />} />
-          <Route path="/auth/join" element={<JoinPage />} />
-          <Route path="/auth/profile" element={<ProfilePage />} />
-          <Route path="/auth/mobile-auth/withdrawal" element={<MobileAuthPage type="withdrawal" />} />
-          <Route path="/auth/mobile-auth/recovery-account-name" element={<MobileAuthPage type="recovery-account-name" />} />
-          <Route path="/auth/mobile-auth/recovery-password" element={<MobileAuthPage type="recovery-password" />} />
-          <Route path="/auth/withdrawal" element={<WithdrawalPage />} />
-          <Route path="/auth/recovery-account-name" element={<RecoveryAccountNamePage />} />
-          <Route path="/auth/recovery-password" element={<RecoveryPasswordPage />} />
-        </Routes>
-      </Router>
-    </Provider>
+    <>
+      <AlertModal />
+      <Routes>
+        {/* 홈 페이지 라우트 */}
+        {/* 레이아웃 적용 */}
+        <Route path="/" element={
+          <Layout>
+            <HomePage />
+          </Layout>
+        } />
+  
+        {/* 로그인 페이지 라우트 */}
+        <Route path="/auth/login" element={<LoginPage />} />
+  
+        {/* 회원가입 페이지 라우트 */}
+        <Route path="/auth/join" element={<JoinPage />} />
+  
+        {/* 아이디 또는 비밀번호 찾기 모바일인증 페이지 라우트 */}
+        <Route path="/auth/mobile-auth/account-name-recovery" element={<MobileAuthPage type="account-name-recovery" />} />
+        <Route path="/auth/mobile-auth/password-recovery" element={<MobileAuthPage type="password-recovery" />} />
+  
+        {/* 아이디 또는 비밀번호 찾기 페이지 라우트 */}
+        <Route path="/auth/account-name-recovery" element={<AccountNameRecoveryPage />} />
+        <Route path="/auth/password-recovery" element={<PasswordRecoveryPage />} />
+  
+        {/* 프로필(내 정보) 페이지 라우트 */}
+        {/* PrivateRoute: 로그인 되어 있지 않으면 접근 제한됨 */}
+        <Route path="/auth/profile" element={
+          <PrivateRoute isAuthenticated={isAuthenticated}>
+            <ProfilePage />
+          </PrivateRoute>
+        } />
+  
+        {/* 비밀번호 변경 페이지 라우트 */}
+        {/* PrivateRoute: 로그인 되어 있지 않으면 접근 제한됨 */}
+        <Route path="/auth/profile/password-change" element={
+          <PrivateRoute isAuthenticated={isAuthenticated}>
+            <PasswordChangePage />
+          </PrivateRoute>
+        } />    
+  
+        {/* 회원탈퇴 모바일인증 페이지 라우트 */}
+        {/* PrivateRoute: 로그인 되어 있지 않으면 접근 제한됨 */}
+        <Route path="/auth/mobile-auth/withdrawal" element={
+          <PrivateRoute isAuthenticated={isAuthenticated}>
+            <MobileAuthPage type="withdrawal" />
+          </PrivateRoute>
+        } />
+  
+        {/* 회원탈퇴 페이지 라우트 */}
+        {/* PrivateRoute: 로그인 되어 있지 않으면 접근 제한됨 */}
+        <Route path="/auth/withdrawal" element={
+          <PrivateRoute isAuthenticated={isAuthenticated}>
+            <WithdrawalPage />
+          </PrivateRoute>
+        } />
+      </Routes>
+    </>
   );
 }
 

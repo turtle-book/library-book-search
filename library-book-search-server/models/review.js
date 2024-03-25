@@ -10,7 +10,7 @@ class Review extends Sequelize.Model {
           model: 'User',
           key: 'id',
         },
-        onDelete: 'SET NULL',
+        onDelete: 'CASCADE',
         comment: '리뷰를 작성한 사용자',
       },
       bookId: {
@@ -20,7 +20,7 @@ class Review extends Sequelize.Model {
           model: 'Book',
           key: 'id',
         },
-        onDelete: 'SET NULL',
+        onDelete: 'CASCADE',
         comment: '리뷰 작성 대상 도서',
       },
       rating: {

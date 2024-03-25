@@ -1,6 +1,6 @@
+const bcrypt = require('bcrypt');
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
-const bcrypt = require('bcrypt');
 
 const User = require('../models/user');
 
@@ -25,7 +25,6 @@ module.exports = () => {
         done(null, false, { message: '가입되지 않은 계정입니다.' });
       }
     } catch (error) {
-      console.error(error);
       done(error);
     }
   }));

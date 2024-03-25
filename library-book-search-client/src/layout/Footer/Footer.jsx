@@ -2,6 +2,11 @@ import { Link } from "react-router-dom";
 
 import "./Footer.css";
 
+/**
+ * Footer 컴포넌트
+ * 
+ * 레이아웃 하단부 렌더링
+ */
 const Footer = () => {
   return (
     <div className="layout-footer">

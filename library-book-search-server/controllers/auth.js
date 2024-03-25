@@ -1,29 +1,25 @@
-const Sequelize = require('sequelize');
-const passport = require('passport');
 const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
-const { v4: uuidv4 } = require('uuid');
 const coolsms = require("coolsms-node-sdk").default;
+const jwt = require('jsonwebtoken');
+const passport = require('passport');
+const Sequelize = require('sequelize');
+const { v4: uuidv4 } = require('uuid');
 
-const User = require('../models/user');
 const MobileAuth = require('../models/mobile_auth');
+const User = require('../models/user');
 const connectToRedis = require('../services/redisClient');
 
 /**
- * auth 1. 회원가입
+ * Auth 1. 회원가입
  */
 exports.join = async (req, res, next) => {
   const { 
-    accountName, 
-    password, 
-    realName, 
-    birthday, 
-    gender, 
-    zonecode, 
-    mainAddress, 
-    detailAddress, 
+    accountName, password, 
+    realName, birthday, gender, 
+    zonecode, mainAddress, detailAddress, 
     mobileNumber, 
   } = req.body;
+
   try {
     // 이미 가입된 사용자 여부 확인
     const exUser = await User.findOne({ where: { accountName } });
@@ -47,18 +43,21 @@ exports.join = async (req, res, next) => {
       detailAddress,
       mobileNumber,
     });
+
     return res.status(201).send({
       code: 'JOIN_SUCCEEDED',
       message: '회원가입이 완료되었습니다. 로그인 해주세요.',
     });
   } catch (error) {
+    console.log('회원가입 실패');
+    console.log('MySQL(시퀄라이즈) 또는 bcrypt 관련 에러 발생');
     console.error(error);
     return next(error);
   }
 };
 
 /**
- * auth 2. 회원탈퇴
+ * Auth 2. 회원탈퇴
  */
 exports.withdrawal = async (req, res, next) => {
   const { accountName } = req.query;
@@ -72,45 +71,51 @@ exports.withdrawal = async (req, res, next) => {
     await client.del(`refreshToken:${accountName}`);
     await client.del(`loginSessionKey:${accountName}`);
     await client.quit();
-
-    // 액세스 토큰 쿠키 및 리프레시 토큰 쿠키 삭제
-    res.clearCookie('access_jwt', {
-      domain: 'localhost',
-      path: '/',
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'Lax',
-      maxAge: 0,
-    });
-    res.clearCookie('refresh_jwt', {
-      domain: 'localhost',
-      path: '/',
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'Lax',
-      maxAge: 0,
-    });
-
-    return res.status(200).send({
-      code: 'WITHDRAWAL SUCCEEDED',
-    });
-
   } catch (error) {
+    console.log('회원탈퇴 실패');
+    console.log('MySQL(시퀄라이즈) 또는 Redis 관련 에러 발생');
     console.error(error);
     return next(error);
   }
+
+  // 액세스 토큰 쿠키 삭제
+  res.clearCookie('access_jwt', {
+    domain: 'localhost',
+    path: '/',
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'Lax',
+    maxAge: 0,
+  });
+  // 리프레시 토큰 쿠키 삭제
+  res.clearCookie('refresh_jwt', {
+    domain: 'localhost',
+    path: '/',
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'Lax',
+    maxAge: 0,
+  });
+
+  return res.status(200).send({
+    code: 'WITHDRAWAL SUCCEEDED',
+  });
 };
 
 /**
- * auth 3. 로그인
+ * Auth 3. 로그인
  */
 exports.login = (req, res, next) => {
   passport.authenticate('local', (authError, user, info) => {
-    console.log(authError, user, info);
+    // 로컬 로그인 전략 수행 실패
     if (authError) {
-      console.error(authError);
+      console.log('로그인 실패');
+      console.log('로컬 로그인 전략 수행 중 에러 발생');
+      console.error(error);
       return next(authError);
     }
+
+    // 로그인 실패(실패 원인이 서버가 아닌 사용자에 의한 경우)
     if (!user) {
       return res.status(200).send({
         code: 'LOGIN_FAILED',
@@ -119,7 +124,11 @@ exports.login = (req, res, next) => {
     }
 
     return req.login(user, { session: false }, async (loginError) => {
+      // Passport 사용자 처리 과정에서 에러가 발생한 경우
+      // 세션 설정을 하지 않았으므로 세션 관련 에러의 가능성은 거의 없음
       if (loginError) {
+        console.log('로그인 실패');
+        console.log('passport 사용자 처리 과정에서 에러 발생');
         console.error(loginError);
         return next(loginError);
       }
@@ -127,7 +136,7 @@ exports.login = (req, res, next) => {
       // 중복로그인 방지를 위한 로그인세션키 생성
       const loginSessionKey = uuidv4();
 
-      // 액세스 토큰 및 리프레시 토큰 생성
+      // 액세스 토큰 생성
       const accessToken = jwt.sign({
         id: user.accountName,
         username: user.realName,
@@ -137,6 +146,7 @@ exports.login = (req, res, next) => {
         issuer: 'happylibrary',
         algorithm: 'HS256',
       });
+      // 리프레시 토큰 생성
       const refreshToken = jwt.sign({
         id: user.accountName,
       }, process.env.JWT_REFRESH_SECRET, {
@@ -148,17 +158,17 @@ exports.login = (req, res, next) => {
       // Redis에 액세스 토큰 로그인세션키와 리프레시 토큰 데이터 저장
       try {
         const client = await connectToRedis();
-        // 로그인세션키 저장
         await client.set(`loginSessionKey:${user.accountName}`, loginSessionKey, 'EX', 5 * 24 * 3600);
-        // 리프레시 토큰 저장
         await client.set(`refreshToken:${user.accountName}`, refreshToken, 'EX', 5 * 24 * 3600);
         await client.quit();
       } catch (redisError) {
+        console.log('로그인 실패');
+        console.log('Redis 관련 에러 발생');
         console.error(redisError);
         return next(redisError);
       }
 
-      // 쿠키 생성
+      // 액세스 토큰 쿠키 생성
       res.cookie('access_jwt', accessToken, {
         domain: 'localhost',
         path: '/',
@@ -166,6 +176,7 @@ exports.login = (req, res, next) => {
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'Lax',
       });
+      // 리프레시 토큰 쿠키 생성
       res.cookie('refresh_jwt', refreshToken, {
         domain: 'localhost',
         path: '/',
@@ -184,53 +195,44 @@ exports.login = (req, res, next) => {
 };
 
 /**
- * auth 4. 로그아웃
+ * Auth 4. 로그아웃
  */
 exports.logout = async (req, res, next) => {
-  const { accountName } = req.body;
-  const refreshToken = req.cookies?.['refresh_jwt'];
+  const accessToken = req.cookies?.['access_jwt'];
+  const accountName = jwt.decode(accessToken)?.id;
 
   try {
-    const client = await connectToRedis();
+    // 액세스 토큰을 통해 사용자 식별이 가능한 경우, Redis에서 리프레시 토큰과 로그인세션키 삭제
+    if (accountName) {
+      const client = await connectToRedis();
 
-    // Redis에서 로그인세션키 삭제
-    const redisLoginSessionKey = await client.get(`loginSessionKey:${accountName}`);
-    if (redisLoginSessionKey) await client.del(`loginSessionKey:${accountName}`);
-
-    // 리프레시 토큰이 있는 경우
-    if (refreshToken) {
-      jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET, { algorithms: ['HS256'] });
-
+      // Redis에 로그인세션키가 남아 있다면 데이터 삭제
+      const redisLoginSessionKey = await client.get(`loginSessionKey:${accountName}`);
+      if (redisLoginSessionKey) await client.del(`loginSessionKey:${accountName}`);
+      // Redis에 리프레시 토큰이 남아 있다면 데이터 삭제
       const redisRefreshToken = await client.get(`refreshToken:${accountName}`);
+      if (redisRefreshToken) await client.del(`refreshToken:${accountName}`);
 
-      // 리프레시 토큰이 유효한 경우 Redis에서 리프레시 토큰 데이터 삭제
-      if (redisRefreshToken && redisRefreshToken === refreshToken) {
-        await client.del(`refreshToken:${accountName}`);
-      }
-
-      // 리프레시 토큰 쿠키 삭제
-      res.clearCookie('refresh_jwt', {
-        domain: 'localhost',
-        path: '/',
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'Lax',
-        maxAge: 0,
-      });
+      await client.quit();
     }
-
-    await client.quit();
-
   } catch (error) {
+    console.log('로그아웃 실패');
+    console.log('Redis 관련 에러 발생');
     console.error(error);
-    // 토큰 검증 실패를 제외한 에러
-    if (!(error instanceof jwt.JsonWebTokenError)) {
-      return next(error);
-    }
+    return next(error);
   }
-  
+
   // 액세스 토큰 쿠키 삭제
   res.clearCookie('access_jwt', {
+    domain: 'localhost',
+    path: '/',
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'Lax',
+    maxAge: 0,
+  });
+  // 리프레시 토큰 쿠키 삭제
+  res.clearCookie('refresh_jwt', {
     domain: 'localhost',
     path: '/',
     httpOnly: true,
@@ -245,21 +247,29 @@ exports.logout = async (req, res, next) => {
 };
 
 /**
- * auth 5. 로그아웃 체크
+ * Auth 5. 로그인 체크
  */
-exports.checkLogout = (req, res, next) => {
+exports.checkLogin = (req, res, next) => {
+  // 로그인 상태로 인정되어 isLoggedIn 미들웨어를 통과한 경우, 본 컨트롤러 로직 실행
+  // 로그인 상태로 인정되지 않은 경우, isLoggedIn 미들웨어에서 403 에러 반환
+  const accessToken = req.cookies['access_jwt'];
+  const accountName = jwt.decode(accessToken).id;
+
   return res.status(200).send({
-    code: 'IS_LOGGED_OUT',
+    code: 'IS_LOGGED_IN', 
+    accountName,
   });
 };
 
 /**
- * auth 6. 액세스 토큰 재발급
+ * Auth 6. 액세스 토큰 재발급
  */
 exports.reissueAccessToken = async (req, res, next) => {
-  const { accountName } = req.body;
+  const accessToken = req.cookies['access_jwt'];
   const refreshToken = req.cookies?.['refresh_jwt'];
+  const accountName = jwt.decode(accessToken).id;
 
+  // 리프레시 토큰 쿠키가 존재하는 경우
   if (refreshToken) {
     try {
       // 리프레시 토큰 검증
@@ -269,11 +279,13 @@ exports.reissueAccessToken = async (req, res, next) => {
       const client = await connectToRedis();
       const redisRefreshToken = await client.get(`refreshToken:${accountName}`);
       
+      // Redis에 해당 사용자의 리프레시 토큰 데이터가 존재하고 쿠키의 리프레시 토큰과 일치하는 경우
       if (redisRefreshToken && redisRefreshToken === refreshToken) {
         const { realName } = await User.findOne({ 
           where: { accountName },
           attributes: ['realName'], 
         });
+
         const newLoginSessionKey = uuidv4();
         
         // 새 액세스 토큰 발급
@@ -295,7 +307,7 @@ exports.reissueAccessToken = async (req, res, next) => {
           algorithm: 'HS256',
         });
 
-        // 새 쿠키 생성
+        // 새 액세스 토큰 쿠키 생성
         res.cookie('access_jwt', newAccessToken, {
           domain: 'localhost',
           path: '/',
@@ -303,6 +315,7 @@ exports.reissueAccessToken = async (req, res, next) => {
           secure: process.env.NODE_ENV === 'production',
           sameSite: 'Lax',
         });
+        // 새 리프레시 토큰 쿠키 생성
         res.cookie('refresh_jwt', newRefreshToken, {
           domain: 'localhost',
           path: '/',
@@ -321,21 +334,37 @@ exports.reissueAccessToken = async (req, res, next) => {
         return res.status(200).send({
           code: 'TOKEN_REISSUE_SUCCEEDED',
         });
+      // Redis에 해당 사용자의 리프레시 토큰 데이터가 존재하지 않는 경우
+      } else if (!redisRefreshToken) {
+        return res.status(403).send({
+          code: 'REFRESH_TOKEN_NOT_FOUND',
+        });
+      // Redis에 저장된 사용자의 리프레시 토큰 데이터와 쿠키의 리프레시 토큰이 일치하지 않는 경우
+      } else {
+        return res.status(403).send({
+          code: 'REFRESH_TOKEN_MISMATCH',
+        });
       }
     } catch (error) {
+      // 리프레시 토큰이 만료된 경우
       if (error instanceof jwt.TokenExpiredError) {
         return res.status(403).send({
           code: 'REFRESH_TOKEN_EXPIRED',
         });
+      // 리프레시 토큰이 유효하지 않은 경우 등 만료된 경우를 제외한 토큰 검증 에러
       } else if (error instanceof jwt.JsonWebTokenError) {
         return res.status(403).send({
           code: 'INVALID_REFRESH_TOKEN',
         });
+      // 그 외 에러
       } else {
+        console.log('액세스 토큰 재발급 실패');
+        console.log('MySQL(시퀄라이즈) 또는 Redis 관련 에러 발생');
         console.error(error);
         return next(error);
       }
     }
+  // 리프레시 토큰 쿠키가 존재하지 않는 경우
   } else {
     return res.status(403).send({
       code: 'NO_REFRESH_TOKEN',
@@ -344,12 +373,23 @@ exports.reissueAccessToken = async (req, res, next) => {
 };
 
 /**
- * auth 7. 모바일 인증코드 전송
+ * Auth 7. 모바일 인증코드 전송
  */
 exports.sendMobileAuthCode = async (req, res, next) => {
   const { accountName, realName, mobileNumber, isRegisteredMobileNumberRequired } = req.body;
   const messageService = new coolsms(process.env.COOLSMS_API_KEY, process.env.COOLSMS_API_SECRET);
   const mobileAuthCode = Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
+
+  // 테스트를 위해 사용하는 번호로만 전송 가능 
+  if (
+    mobileNumber !== process.env.COOLSMS_TEST_MOBILE_NUMBER_1 && 
+    mobileAuthCode !== process.env.COOLSMS_TEST_MOBILE_NUMBER_2
+  ) {
+    return res.status(200).send({
+      code: 'AUTH_CODE_SEND_FAILED',
+      message: '테스트 가능한 휴대전화번호가 아닙니다.',
+    });
+  }
 
   try {
     const whereClause = { mobileNumber };
@@ -359,7 +399,7 @@ exports.sendMobileAuthCode = async (req, res, next) => {
 
     const exUser = await User.findOne({ where: whereClause });
 
-    // 회원가입 및 휴대전화번호 변경의 경우, 해당 휴대전화번호로 가입된 정보가 있는 경우 실패
+    // 회원가입 및 휴대전화번호 변경의 경우, 이미 해당 휴대전화번호로 가입된 정보가 있는 경우 실패
     if (!isRegisteredMobileNumberRequired && exUser) {
       return res.status(200).send({
         code: 'AUTH_CODE_SEND_FAILED',
@@ -388,31 +428,32 @@ exports.sendMobileAuthCode = async (req, res, next) => {
       expiredAt: Sequelize.literal('DATE_ADD(NOW(), INTERVAL 3 MINUTE)'),
       verified: false,
     });
-    
+
     return res.status(201).send({
       code: 'AUTH_CODE_SENT',
       message: '인증코드가 전송되었습니다.'
     });
-
   } catch (error) {
+    console.log('모바일 인증코드 전송 실패');
     console.error(error);
     return next(error);
   }
 };
 
 /**
- * auth 8. 모바일 인증코드 검증
+ * Auth 8. 모바일 인증코드 검증
  */
 exports.verifyMobileAuthCode = async (req, res, next) => {
   const { mobileNumber, mobileAuthCode } = req.body;
   const { Op } = Sequelize;
 
   try {
+    // 휴대전화번호가 일치하고, 만료기한이 현재 시간을 지나지 않았고, 검증 완료되지 않은 데이터 중 가장 최근 데이터를 조회
     const mobileAuthData = await MobileAuth.findOne({
       where: {
         mobileNumber,
-        expiredAt: {
-          [Op.gt]: Sequelize.literal('NOW()'),
+        expiredAt: { 
+          [Op.gt]: Sequelize.literal('NOW()') 
         },
         verified: false,
       },
@@ -434,20 +475,29 @@ exports.verifyMobileAuthCode = async (req, res, next) => {
       });
     }
 
-    return res.status(200).send({
-      code: 'AUTH_CODE_VERIFIED',
-    });
+    // 해당 모바일인증 데이터 검증 완료 상태로 업데이트
+    await MobileAuth.update(
+      { verified: true }, 
+      {
+        where: { id: mobileAuthData.id }
+      }
+    );
 
+    return res.status(200).send({
+      code: 'AUTH_CODE_VERIFICATION_SUCCEEDED',
+    });
   } catch (error) {
+    console.log('모바일 인증코드 검증 실패');
+    console.log('MySQL(시퀄라이즈) 관련 에러 발생');
     console.error(error);
     return next(error);
   }
 };
 
 /**
- * auth 9. 아이디 찾기
+ * Auth 9. 아이디 찾기
  */
-exports.getAccountName = async (req, res, next) => {
+exports.findAccountName = async (req, res, next) => {
   const { mobileNumber } = req.query;
 
   try {
@@ -465,15 +515,16 @@ exports.getAccountName = async (req, res, next) => {
       code: 'FIND_ID_SUCCEEDED',
       accountName: exUser.accountName,
     });
-
   } catch (error) {
+    console.log('아이디 찾기 실패');
+    console.log('MySQL(시퀄라이즈) 관련 에러 발생');
     console.error(error);
     return next(error);
   }
 };
 
 /**
- * auth 10. 회원정보 불러오기
+ * Auth 10. 회원정보 불러오기
  */
 exports.loadProfile = async (req, res, next) => {
   const { accountName } = req.query;
@@ -486,24 +537,29 @@ exports.loadProfile = async (req, res, next) => {
         'zonecode', 'mainAddress', 'detailAddress', 'mobileNumber'
       ],
     });
+
     return res.status(200).send({
       code: 'LOAD PROFILE SUCCEEDED',
       userInfo,
     });
   } catch (error) {
+    console.log('회원정보 불러오기 실패');
+    console.log('MySQL(시퀄라이즈) 관련 에러 발생');
     console.error(error);
     return next(error);
   }
 };
 
 /**
- * auth 11. 비밀번호 변경(비밀번호 찾기)
+ * Auth 11. 비밀번호 변경(비밀번호 찾기)
  */
 exports.changePassword = async (req, res, next) => {
+  // 비밀번호 변경의 경우 currentPassword가 요청 객체에 포함되나,
+  // 비밀번호 찾기의 경우 그렇지 않음
   const { accountName, currentPassword, newPassword } = req.body;
 
   try {
-    // 비밀번호 변경의 경우, 현재 비밀번호 일치 여부 확인
+    // 비밀번호 변경이 목적인 경우, 현재 비밀번호 일치 여부 확인
     if (currentPassword) {
       const { password } = await User.findOne({ 
         where: { accountName },
@@ -521,23 +577,60 @@ exports.changePassword = async (req, res, next) => {
 
     // 새 비밀번호로 변경
     const hash = await bcrypt.hash(newPassword, 12);
-    await User.update({ password: hash }, {
-      where: { accountName },
-    });
+    await User.update(
+      { password: hash }, 
+      {
+        where: { accountName }
+      }
+    );
+
+    // 비밀번호 변경이 목적인 경우, 추가로 로그아웃 처리
+    if (currentPassword) {
+      const client = await connectToRedis();
+
+      // Redis에 로그인세션키가 남아 있다면 데이터 삭제
+      const redisLoginSessionKey = await client.get(`loginSessionKey:${accountName}`);
+      if (redisLoginSessionKey) await client.del(`loginSessionKey:${accountName}`);
+    
+      // Redis에 리프레시 토큰이 남아 있다면 데이터 삭제
+      const redisRefreshToken = await client.get(`refreshToken:${accountName}`);
+      if (redisRefreshToken) await client.del(`refreshToken:${accountName}`);
+
+      await client.quit();
+
+      // 액세스 토큰 쿠키 삭제
+      res.clearCookie('access_jwt', {
+        domain: 'localhost',
+        path: '/',
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'Lax',
+        maxAge: 0,
+      });
+      // 리프레시 토큰 쿠키 삭제
+      res.clearCookie('refresh_jwt', {
+        domain: 'localhost',
+        path: '/',
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'Lax',
+        maxAge: 0,
+      });
+    }
 
     return res.status(200).send({
       code: 'CHANGE_PASSWORD_SUCCEEDED',
       message: '비밀번호가 변경되었습니다. 로그인 해주세요.',
     });
-
   } catch (error) {
+    console.log('비밀번호 변경(찾기) 실패');
     console.error(error);
     return next(error);
   }
 };
 
 /**
- * auth 12. 주소 변경
+ * Auth 12. 주소 변경
  */
 exports.changeAddress = async (req, res, next) => {
   const { accountName, newZonecode, newMainAddress, newDetailAddress } = req.body;
@@ -554,29 +647,34 @@ exports.changeAddress = async (req, res, next) => {
     return res.status(200).send({
       code: 'ADDRESS_UPDATED',
     });
-    
   } catch (error) {
+    console.log('주소 변경 실패');
+    console.log('MySQL(시퀄라이즈) 관련 에러 발생');
     console.error(error);
     return next(error);
   }
 };
 
 /**
- * auth 13. 휴대폰 번호 변경
+ * Auth 13. 휴대폰전화번호 변경
  */
 exports.changeMobileNumber = async (req, res, next) => {
   const { accountName, newMobileNumber } = req.body;
   
   try {
-    await User.update({ mobileNumber: newMobileNumber }, {
-      where: { accountName },
-    });
+    await User.update(
+      { mobileNumber: newMobileNumber }, 
+      {
+        where: { accountName }
+      }
+    );
 
     return res.status(200).send({
       code: 'MOBILE_NUMBER_UPDATED',
     });
-
   } catch (error) {
+    console.log('휴대전화번호 변경 실패');
+    console.log('MySQL(시퀄라이즈) 관련 에러 발생');
     console.error(error);
     return next(error);
   }

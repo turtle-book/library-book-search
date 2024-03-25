@@ -20,18 +20,16 @@ exports.isLoggedIn = async (req, res, next) => {
     const loginSessionKey = await client.get(`loginSessionKey:${decoded?.id}`);
     await client.quit();
 
-    // 로그인세션키 불일치(중복로그인 발생)
+    // 로그인세션키가 일치하지 않는 경우(중복로그인 발생)
     if (decoded?.loginSessionKey !== loginSessionKey) {
       return res.status(403).send({
         code: 'INVALID_LOGIN_SESSION_KEY',
       });
     }
-
     // 액세스 토큰 검증
     jwt.verify(accessToken, process.env.JWT_ACCESS_SECRET, { algorithms: ['HS256'] });
-
+    // 성공시 미들웨어 통과
     next();
-
   } catch (error) {
     // 액세스 토큰 만료
     if (error instanceof jwt.TokenExpiredError) {
@@ -45,6 +43,8 @@ exports.isLoggedIn = async (req, res, next) => {
       });
     // Redis 에러 등 그 외 에러
     } else {
+      console.log('isLoggedIn 미들웨어에서 토큰 검증 관련 에러를 제외한 에러 발생');
+      console.error(error);
       return next(error);
     }
   }
@@ -55,7 +55,8 @@ exports.isNotLoggedIn = (req, res, next) => {
   const accessToken = req.cookies?.['access_jwt'];
   const refreshToken = req.cookies?.['refresh_jwt'];
   
-  const verifyToken = (token, secretKey) => {
+  // 토큰 상태 확인 함수
+  function verifyToken(token, secretKey) {
     try {
       jwt.verify(token, secretKey, { algorithms: ['HS256'] });
       return 'VALID';
